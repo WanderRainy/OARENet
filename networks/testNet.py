@@ -6,11 +6,10 @@ import torch
 from networks.dinknet import BAM_LinkNet50,BAM_LinkNet50_T,LinkNet50_T
 from networks.swin_transformer import SwinTransformer
 
-class TestNet(nn.Module):
+class GAMSNet_OAM(nn.Module):
     def __init__(self):
-        super(TestNet, self).__init__()
-        self.erase_channel=16
-
+        super(GAMSNet_OAM, self).__init__()
+        self.erase_channel=2
         self.resnet = BAM_LinkNet50_T()
         self.decoder = build_decoder()
         self.erase = build_erase(erase_channel=self.erase_channel)
@@ -24,110 +23,13 @@ class TestNet(nn.Module):
         self.finalconv = nn.Conv2d(64+self.erase_channel,1,1)
     def forward(self,x):
         e1, e2, e3, e4=self.resnet(x)
-        x = self.decoder(e1, e2, e3, e4) # 64
+        x = self.decoder(e1, e2, e3, e4)
         x1 = self.erase(x)
         x2 = self.deconv(x)
-        x = torch.cat((x1, x2),dim=1)
-        # x = self.deconv(x)
-        x = self.finalconv(x)
-        return torch.sigmoid(x)
-class GAMSNet_OAM(nn.Module):
-    def __init__(self):
-        super(GAMSNet_OAM, self).__init__()
-        self.erase_channel=0
-
-        self.resnet = BAM_LinkNet50_T()
-        self.decoder = build_decoder()
-        # self.erase = build_erase(erase_channel=self.erase_channel)
-        self.deconv = nn.Sequential(nn.ConvTranspose2d(64, 64, 3, stride=2, padding=1, output_padding=1),
-                                    nn.BatchNorm2d(64),
-                                    nn.ReLU(),
-                                    nn.Conv2d(64, 64, 1, bias=False),
-                                    nn.BatchNorm2d(64),
-                                    nn.ReLU(),
-                                    )
-        self.finalconv = nn.Conv2d(64+self.erase_channel,1,1)
-    def forward(self,x):
-        e1, e2, e3, e4=self.resnet(x)
-        x = self.decoder(e1, e2, e3, e4)
-        # x1 = self.erase(x)
-        x2 = self.deconv(x)
-        # x = torch.cat((x1, x2),dim=1)
-        # x = self.deconv(x)
+        x2 = torch.cat((x1, x2),dim=1)
         x = self.finalconv(x2)
         return torch.sigmoid(x)
-# class GAMSNet_OAM(nn.Module):
-#     def __init__(self):
-#         super(GAMSNet_OAM, self).__init__()
-#         self.erase_channel=0
-#
-#         self.resnet = BAM_LinkNet50_T()
-#         self.decoder = build_decoder()
-#         self.erase = build_erase(erase_channel=self.erase_channel)
-#         self.deconv = nn.Sequential(nn.ConvTranspose2d(64, 64, 3, stride=2, padding=1, output_padding=1),
-#                                     nn.BatchNorm2d(64),
-#                                     nn.ReLU(),
-#                                     nn.Conv2d(64, 64, 1, bias=False),
-#                                     nn.BatchNorm2d(64),
-#                                     nn.ReLU(),
-#                                     )
-#         self.finalconv = nn.Conv2d(64+self.erase_channel,1,1)
-#     def forward(self,x):
-#         e1, e2, e3, e4=self.resnet(x)
-#         x = self.decoder(e1, e2, e3, e4)
-#         # x1 = self.erase(x)
-#         x2 = self.deconv(x)
-#         # x = torch.cat((x1, x2),dim=1)
-#         # x = self.deconv(x)
-#         x = self.finalconv(x2)
-#         return torch.sigmoid(x)
-class TestNet2(nn.Module):
-    def __init__(self):
-        super(TestNet2, self).__init__()
-        self.resnet = BAM_LinkNet50_T()
-        self.decoder = build_decoder2(filters = [256, 512, 1024, 2048])
-        self.erase = build_erase(erase_channel=64)
-        self.deconv = nn.Sequential(nn.ConvTranspose2d(64, 64, 3, stride=2, padding=1, output_padding=1),
-                                    nn.BatchNorm2d(64),
-                                    nn.ReLU(),
-                                    nn.Conv2d(64, 64, 1, bias=False),
-                                    nn.BatchNorm2d(64),
-                                    nn.ReLU(),
-                                    )
-        self.finalconv = nn.Conv2d(64,1,1)
-    def forward(self,x):
-        e1, e2, e3, e4=self.resnet(x)
-        x = self.decoder(e1, e2, e3, e4) # 64
-        x1 = self.erase(x)
-        x2 = self.deconv(x)
-        x = x1+x2
-        # x = self.deconv(x)
-        x = self.finalconv(x)
-        return torch.sigmoid(x)
-class TestNet3(nn.Module):
-    # OAM use concat, ROA use add
-    def __init__(self):
-        super(TestNet3, self).__init__()
-        self.resnet = BAM_LinkNet50_T()
-        self.decoder = build_decoder(filters = [256, 512, 1024, 2048])
-        self.erase = build_erase(erase_channel=64)
-        self.deconv = nn.Sequential(nn.ConvTranspose2d(64, 64, 3, stride=2, padding=1, output_padding=1),
-                                    nn.BatchNorm2d(64),
-                                    nn.ReLU(),
-                                    nn.Conv2d(64, 64, 1, bias=False),
-                                    nn.BatchNorm2d(64),
-                                    nn.ReLU(),
-                                    )
-        self.finalconv = nn.Conv2d(64,1,1)
-    def forward(self,x):
-        e1, e2, e3, e4=self.resnet(x)
-        x = self.decoder(e1, e2, e3, e4) # 64
-        x1 = self.erase(x)
-        x2 = self.deconv(x)
-        x = x1+x2
-        # x = self.deconv(x)
-        x = self.finalconv(x)
-        return torch.sigmoid(x)
+
 class SwinT_A(nn.Module):
     def __init__(self):
         super(SwinT_A, self).__init__()
